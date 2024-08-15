@@ -6,8 +6,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet"
+
 import { bytesToReadableString } from "@/lib/files"
-import { Bot, Check, CircleStop, File as IconFile, LoaderCircle, UserRound, X } from "lucide-react"
+import { Check, CircleStop, File as IconFile, LoaderCircle, ThumbsDown, ThumbsUp, X } from "lucide-react"
 import React, { FC, memo } from "react"
 import ReactMarkdown, { Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -42,6 +43,8 @@ export function ChatMessage({
     message: IMessage,
     stopReceivingMessage?: () => void,
 }) {
+
+    const [good, setIsGood] = React.useState<boolean | undefined>(undefined)
 
     if (message.type === "file") {
         return (
@@ -117,6 +120,35 @@ export function ChatMessage({
                     message.status === 'receiving' && <LoaderCircle className="w-4 h-4 text-blue-500 absolute right-1 bottom-1 animate-spin" />
                 }
             </div>
+
+
+            {message.status === 'finished' &&
+                <div className="w-full flex justify-end gap-2 pr-4">
+                    <ThumbsUp className={twMerge("cursor-pointer text-gray-400 hover:text-gray-800 duration-300 transition-all",
+                        good === true && "fill-black text-black cursor-not-allowed",
+                        good !== undefined && "cursor-not-allowed",
+                        good === false && 'hover:text-gray-400'
+
+                    )
+                    }
+                        onClick={() => {
+                            if (good === undefined) {
+                                setIsGood(true)
+                            }
+                        }}
+                    /><ThumbsDown className={twMerge("cursor-pointer text-gray-400 hover:text-gray-800 duration-300 transition-all",
+                        good === false && "fill-black text-black cursor-not-allowed",
+                        good !== undefined && "cursor-not-allowed",
+                        good === true && 'hover:text-gray-400'
+                    )}
+                        onClick={() => {
+                            if (good === undefined) {
+                                setIsGood(false)
+                            }
+                        }}
+                    />
+                </div>}
+
             {
                 message.status === 'receiving' && stopReceivingMessage && (
                     <div className="flex flex-row items-center" onClick={stopReceivingMessage}>
