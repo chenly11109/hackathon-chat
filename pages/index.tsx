@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <TooltipProvider>
       <Head>
-        <title>CreativeSKU AI</title>
+        <title>AIGC 知识助手</title>
         <meta name="description" content="AI chat bot for tezign creative SKU" />
         <meta name="robots" content="noindex,nofollow" />
       </Head>

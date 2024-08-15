@@ -14,7 +14,8 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { Button } from "../ui/button"
 import { ChatInput } from "./chat-input"
-import { Shortcuts } from "./shortcuts"
+import Image from "next/image"
+import { twMerge } from "tailwind-merge"
 
 export type Role = "user" | "assistant"
 export type MessageType = "text" | "file" | "markdown"
@@ -90,12 +91,15 @@ export function ChatMessage({
             <div className="border text-gray-900 bg-white rounded-xl px-3 py-2 text-sm">{message.content}</div>
         )
     }
-
     return (
         <div className="flex flex-col gap-2 relative">
-            <div className="bg-white rounded-xl px-3 py-2 min-h-10 min-w-16 relative border">
+            <div className={twMerge("bg-white rounded-xl px-3 py-2 min-h-10 md:min-w-16 relative border")}>
                 {
-                    message.status === 'pending' && <img src="/bars.svg" alt="" className="h-8 ml-1" />
+                    message.status === 'pending' && <Image
+                        width={60}
+                        height={60}
+                        alt="bars.svg"
+                        src="/bars.svg" className="h-8 ml-1" />
                 }
                 <MemoizedReactMarkdown
                     className="prose prose-sm max-w-screen-md break-words prose-p:leading-relaxed prose-pre:p-0 prose-a:text-blue-500 prose-h1:mb-2 prose-h2:mt-0 prose-h2:mb-2 text-gray-900 "
@@ -143,23 +147,29 @@ const Chat = React.forwardRef<HTMLDivElement, ChatProps>(
                         messages.map((message, index) => {
                             if (message.role === "user") {
                                 return (
-                                    <div className={"flex flex-row gap-2 justify-end w-full relative"} key={index}>
+                                    <div className={"flex flex-row gap-2 justify-end mr-10 md:w-full md:mr-0 relative"} key={index}>
                                         <ChatMessage message={message} />
-                                        <img src="/avatar-user.png" className="rounded-full bg-white w-10 h-10 flex items-center justify-center absolute -top-0.5 -right-12" />
+                                        <Image
+                                            alt="avatar"
+                                            width={40}
+                                            height={40}
+                                            src="/avatar-user.png" className="rounded-full bg-white w-10 h-10 flex items-center justify-center absolute -top-0.5 -right-12" />
                                     </div>
                                 )
                             }
                             return (
-                                <div className={"flex flex-row gap-2 w-full relative"} key={index}>
-                                    <img src="/avatar-ai.jpeg" className="rounded-full bg-gray-400 w-10 h-10 min-w-10 min-h-10 flex items-center justify-center absolute -top-0.5 -left-12" />
+                                <div className={"flex flex-row gap-2 ml-10 md:w-full md:ml-0 relative"} key={index}>
+                                    <Image src="/avatar-ai.jpeg"
+                                        width={40}
+                                        height={40}
+                                        alt="avatar"
+                                        className="rounded-full bg-gray-400 w-10 h-10 min-w-10 min-h-10 flex items-center justify-center absolute -top-0.5 -left-12" />
                                     <ChatMessage message={message} stopReceivingMessage={stopReceivingMessage} />
                                 </div>
                             )
                         })
                     }
-                    {
-                        messages?.length > 1 && ['finished', 'error'].includes(messages[messages.length - 1].status || '') && <Shortcuts sendMessage={sendMessage} />
-                    }
+
                 </div>
                 <ChatInput sendMessage={sendMessage} />
             </div>

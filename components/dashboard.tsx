@@ -33,6 +33,7 @@ import { BriefParser } from "./brief-parser"
 import { Chat, IMessage } from "./chat"
 import { Input } from "./ui/input"
 import { useToast } from "./ui/use-toast"
+import { twMerge } from "tailwind-merge"
 
 
 export interface IFileMeta {
@@ -43,7 +44,7 @@ export interface IFileMeta {
 export interface ISession {
     sessionId: string
     name: string
-    fileUploaded: boolean
+    startConversation: boolean
     fileMeta?: IFileMeta
     difyConversationId?: string
 }
@@ -55,7 +56,7 @@ const AuthHeader = {
 const defaultSession = {
     sessionId: "DEFAULT",
     name: "默认对话",
-    fileUploaded: false,
+    startConversation: false,
 }
 
 const initState: {
@@ -121,7 +122,7 @@ export function Dashboard({
         const newSession = {
             sessionId: nanoid(),
             name: "未命名对话",
-            fileUploaded: false,
+            startConversation: false,
         }
         state.sessions[newSession.sessionId] = newSession
         state.currentSessionId = newSession.sessionId
@@ -160,6 +161,33 @@ export function Dashboard({
     }
 
 
+    const askFirstQuestion = async (content: string) => {
+        const message: IMessage = {
+            role: 'user',
+            type: 'text',
+            content,
+            status: 'finished'
+        }
+        const sessionId = state.currentSessionId
+        messagesState[sessionId] = [message]
+        try {
+            state.sessions[sessionId] = {
+                ...state.sessions[sessionId],
+                startConversation: true,
+            }
+            _sendMessageToDify(sessionId, content)
+        } catch (e) {
+            console.log(e)
+            messagesState[sessionId][0].status = 'error'
+            toast({
+                title: "查找数据库失败",
+                description: "服务器可能无法访问，请稍后重试",
+                variant: "destructive",
+            })
+        }
+    }
+
+
     const onFileUpload = async (file: File) => {
         const message: IMessage = {
             type: "file",
@@ -181,7 +209,7 @@ export function Dashboard({
             // setValue(JSON.stringify(state))
             state.sessions[sessionId] = {
                 ...state.sessions[sessionId],
-                fileUploaded: true,
+                startConversation: true,
                 name: file.name.replace(/\.[^/.]+$/, ""),
                 fileMeta: {
                     file_name: file.name,
@@ -302,25 +330,25 @@ export function Dashboard({
         }).then(resp => {
             messagesState[sessionId] = []
             resp.data.data.forEach((item: any, index: number) => {
-                if (index === 0) {
-                    messagesState[sessionId].push({
-                        type: "file",
-                        role: "user",
-                        meta: {
-                            file_name: session.fileMeta?.file_name,
-                            file_size: session.fileMeta?.file_size || 0,
-                            file_content: item.query
-                        },
-                        content: "",
-                        status: "finished",
-                    })
-                } else {
-                    messagesState[sessionId].push({
-                        role: 'user',
-                        type: 'text',
-                        content: item.query,
-                    })
-                }
+                // if (index === 0) {
+                //     messagesState[sessionId].push({
+                //         type: "file",
+                //         role: "user",
+                //         meta: {
+                //             file_name: session.fileMeta?.file_name,
+                //             file_size: session.fileMeta?.file_size || 0,
+                //             file_content: item.query
+                //         },
+                //         content: "",
+                //         status: "finished",
+                //     })
+                // } else {
+                messagesState[sessionId].push({
+                    role: 'user',
+                    type: 'text',
+                    content: item.query,
+                })
+                // }
                 if (item.status === 'error') {
                     messagesState[sessionId].push({
                         role: 'assistant',
@@ -358,9 +386,11 @@ export function Dashboard({
 
     return (
         <div className="h-screen w-full flex flex-row">
-            <div className="w-72 h-full border-r flex-none">
+            <div className={twMerge("w-72 h-full border-r flex-none hidden",
+                "md:block"
+            )}>
                 <div className="p-4 border-b flex flex-row items-center justify-between">
-                    <span className=" font-semibold text-xl">AIGC 知识助手</span>
+                    <span className="font-semibold text-xl">AIGC 知识助手</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger aria-label="menu">
                             <Menu className="w-5 h-5" />
@@ -411,7 +441,7 @@ export function Dashboard({
                     </div>
                 </div>
             </div>
-            <div className="h-full grow bg-gray-100">
+            <div className={"h-full grow bg-gray-100"}>
                 {
                     isLoadingMessages ? (
                         <div className="w-full h-full flex justify-center items-center">
@@ -424,7 +454,7 @@ export function Dashboard({
                             sendMessage={sendMessage}
                             stopReceivingMessage={stopReceivingMessage}
                         />
-                    ) : <BriefParser onFileUpload={onFileUpload} />
+                    ) : <BriefParser askFirstQuestion={askFirstQuestion} />
                 }
             </div>
 
