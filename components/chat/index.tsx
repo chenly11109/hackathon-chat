@@ -14,9 +14,9 @@ import ReactMarkdown, { Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { Button } from "../ui/button"
-import { ChatInput } from "./chat-input"
 import Image from "next/image"
 import { twMerge } from "tailwind-merge"
+import axios from "axios"
 
 export type Role = "user" | "assistant"
 export type MessageType = "text" | "file" | "markdown"
@@ -24,9 +24,34 @@ export type MessageType = "text" | "file" | "markdown"
 export interface IMessage {
     type: MessageType
     role: Role
+    query?: string
     content: string
     meta?: any
     status?: string
+}
+
+
+enum ThumbsUpType {
+    bad = -1,
+    good = 1,
+    none = 0
+}
+interface IAnswer {
+    requestBody: string;
+    responseBody: string;
+    thumbsUpType: ThumbsUpType
+}
+
+
+async function recordAnswer(props: IAnswer) {
+    const res = await axios.post('https://vms-service.test.tezign.com/dam-aigc/hackathon-request-records/public/save-request-records', props,
+        {
+            headers: {
+                'x-asm-prefer-tag': 'version-env-06'
+            }
+        }
+    )
+    return res
 }
 
 export const MemoizedReactMarkdown: FC<Options> = memo(
@@ -35,6 +60,41 @@ export const MemoizedReactMarkdown: FC<Options> = memo(
         prevProps.children === nextProps.children &&
         prevProps.className === nextProps.className
 )
+
+export function FileRender({ message }: { message: IMessage }) {
+    return <Sheet>
+        <SheetTrigger>
+            <div className="w-64 space-x-2 flex flex-row border-gray-200 relative border text-gray-900 bg-white rounded-xl px-3 py-2">
+                <IconFile className="w-10 h-10 text-gray-600" />
+                <div className="flex flex-col gap-1 flex-1 text-left">
+                    <span className="line-clamp-1 text-sm w-40 text-ellipsis overflow-hidden">{message.meta.file_name}</span>
+                    <div className="flex flex-row justify-between text-xs w-full">
+                        <span className="text-gray-500">{bytesToReadableString(message.meta.file_size)}</span>
+                    </div>
+                </div>
+                {
+                    message.status === 'finished' ? (
+                        <Check className="w-4 h-4 absolute text-green-500 right-1 bottom-1" />
+                    ) : message.status === 'error' ? (
+                        <X className="w-4 h-4 text-red-500 absolute right-1 bottom-1" />
+                    ) : (
+                        <LoaderCircle className="w-4 h-4 text-blue-500 absolute right-1 bottom-1 animate-spin" />
+                    )
+                }
+            </div>
+        </SheetTrigger>
+        <SheetContent className="overflow-y-auto">
+            <SheetHeader>
+                <SheetTitle>文件详情</SheetTitle>
+                <SheetDescription className="whitespace-pre-wrap">
+                    {
+                        message.meta.file_content
+                    }
+                </SheetDescription>
+            </SheetHeader>
+        </SheetContent>
+    </Sheet>
+}
 
 export function ChatMessage({
     message,
@@ -48,38 +108,7 @@ export function ChatMessage({
 
     if (message.type === "file") {
         return (
-            <Sheet>
-                <SheetTrigger>
-                    <div className="w-64 space-x-2 flex flex-row border-gray-200 relative border text-gray-900 bg-white rounded-xl px-3 py-2">
-                        <IconFile className="w-10 h-10 text-gray-600" />
-                        <div className="flex flex-col gap-1 flex-1 text-left">
-                            <span className="line-clamp-1 text-sm">{message.meta.file_name}</span>
-                            <div className="flex flex-row justify-between text-xs w-full">
-                                <span className="text-gray-500">{bytesToReadableString(message.meta.file_size)}</span>
-                            </div>
-                        </div>
-                        {
-                            message.status === 'finished' ? (
-                                <Check className="w-4 h-4 absolute text-green-500 right-1 bottom-1" />
-                            ) : message.status === 'error' ? (
-                                <X className="w-4 h-4 text-red-500 absolute right-1 bottom-1" />
-                            ) : (
-                                <LoaderCircle className="w-4 h-4 text-blue-500 absolute right-1 bottom-1 animate-spin" />
-                            )
-                        }
-                    </div>
-                </SheetTrigger>
-                <SheetContent className="overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>文件详情</SheetTitle>
-                        <SheetDescription className="whitespace-pre-wrap">
-                            {
-                                message.meta.file_content
-                            }
-                        </SheetDescription>
-                    </SheetHeader>
-                </SheetContent>
-            </Sheet>
+            <FileRender message={message} />
         )
     }
 
@@ -128,12 +157,23 @@ export function ChatMessage({
                         good === true && "fill-black text-black cursor-not-allowed",
                         good !== undefined && "cursor-not-allowed",
                         good === false && 'hover:text-gray-400'
-
                     )
                     }
-                        onClick={() => {
+                        onClick={async () => {
                             if (good === undefined) {
                                 setIsGood(true)
+
+                                console.log({
+                                    requestBody: message.query || '',
+                                    responseBody: message.content,
+                                    thumbsUpType: ThumbsUpType.good
+                                })
+                                const res = await recordAnswer({
+                                    requestBody: message.query || '',
+                                    responseBody: message.content,
+                                    thumbsUpType: ThumbsUpType.good
+                                })
+                                console.log(res)
                             }
                         }}
                     /><ThumbsDown className={twMerge("cursor-pointer text-gray-400 hover:text-gray-800 duration-300 transition-all",
@@ -141,9 +181,21 @@ export function ChatMessage({
                         good !== undefined && "cursor-not-allowed",
                         good === true && 'hover:text-gray-400'
                     )}
-                        onClick={() => {
+                        onClick={async () => {
                             if (good === undefined) {
                                 setIsGood(false)
+
+                                console.log({
+                                    requestBody: message.query || '',
+                                    responseBody: message.content,
+                                    thumbsUpType: ThumbsUpType.bad
+                                })
+                                const res = await recordAnswer({
+                                    requestBody: message.query || '',
+                                    responseBody: message.content,
+                                    thumbsUpType: ThumbsUpType.good
+                                })
+                                console.log(res)
                             }
                         }}
                     />
@@ -164,14 +216,27 @@ export function ChatMessage({
     )
 }
 
-export interface ChatProps {
-    messages: IMessage[],
+export interface IFile {
+    content: string,
+    meta: {
+        file_name: string,
+        file_size: number
+        file_content: string
+    }
+}
+
+export interface IChatInput {
     sendMessage: (content: string) => void,
+    sendMessageWithFile: ({ content, file }: { content: string, file: IFile }) => void,
+    uploadFile: (file: File) => Promise<IFile | undefined>
+}
+export type ChatProps = {
+    messages: IMessage[],
     stopReceivingMessage: () => void,
 }
 
 const Chat = React.forwardRef<HTMLDivElement, ChatProps>(
-    ({ messages, sendMessage, stopReceivingMessage, ...props }, ref) => {
+    ({ messages, stopReceivingMessage, ...props }, ref) => {
         return (
             <div ref={ref} className="w-full h-full overflow-x-hidden overflow-y-auto pb-36" {...props} id={"hello"}>
                 <div className="flex flex-col gap-4 p-8 w-full max-w-screen-md mx-auto">
@@ -203,7 +268,7 @@ const Chat = React.forwardRef<HTMLDivElement, ChatProps>(
                     }
 
                 </div>
-                <ChatInput sendMessage={sendMessage} />
+
             </div>
         )
     }

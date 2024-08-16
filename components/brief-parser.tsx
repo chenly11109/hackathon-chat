@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { ChatInput } from './chat/chat-input';
 
 function RecommendedQuestion({ question, askFirstQuestion }: { askFirstQuestion: (content: string) => Promise<void>, question: string }) {
     return <div

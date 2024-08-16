@@ -34,6 +34,9 @@ import { Chat, IMessage } from "./chat"
 import { Input } from "./ui/input"
 import { useToast } from "./ui/use-toast"
 import { twMerge } from "tailwind-merge"
+import { IFile } from "./chat"
+import { ChatInput } from "./chat/chat-input"
+
 
 
 export interface IFileMeta {
@@ -228,6 +231,48 @@ export function Dashboard({
         }
     }
 
+
+    const uploadFile = async (file: File) => {
+        try {
+            const text = await parseFile(file)
+            const parsedFile = {
+                content: text,
+                meta: {
+                    file_name: file.name,
+                    file_size: file.size,
+                    file_content: text
+                }
+            }
+            return parsedFile
+        } catch (e) {
+            toast({
+                title: "文件解析失败",
+                description: "服务器可能无法访问，请稍后重试",
+                variant: "destructive",
+            })
+        }
+    }
+
+    const sendMessageWithFile = async ({ content, file }: {
+        content: string, file: IFile
+    }) => {
+        messagesState[state.currentSessionId].push({
+            role: 'user',
+            type: 'file',
+            ...file,
+            status: "finished",
+
+        })
+        messagesState[state.currentSessionId].push({
+            role: 'user',
+            type: 'text',
+            content
+        })
+        scrollToBottom()
+        const sendText = `${content}\n以下是用户提供的文件:\n\`\`\`\n${file.content}\n\`\`\``
+        _sendMessageToDify(state.currentSessionId, sendText)
+    }
+
     const sendMessage = async (content: string) => {
         messagesState[state.currentSessionId].push({
             role: 'user',
@@ -261,12 +306,13 @@ export function Dashboard({
                     messagesState[sessionId].push({
                         type: 'text',
                         role: "assistant",
-                        content: '服务端异常，请联系「姜明蕾」解决！',
+                        content: '服务端异常，请联系「AIGC Studio」解决！',
                         status: "error",
                     })
                 } else {
                     messagesState[sessionId].push({
                         type: 'markdown',
+                        query: message,
                         role: "assistant",
                         content: '',
                         status: "pending",
@@ -451,11 +497,17 @@ export function Dashboard({
                         <Chat
                             ref={chatRef}
                             messages={messages[currentSessionId] as IMessage[] || []}
-                            sendMessage={sendMessage}
+
                             stopReceivingMessage={stopReceivingMessage}
                         />
                     ) : <BriefParser askFirstQuestion={askFirstQuestion} />
                 }
+
+                <ChatInput
+                    sendMessage={sendMessage}
+                    sendMessageWithFile={sendMessageWithFile}
+                    uploadFile={uploadFile}
+                />
             </div>
 
             <Dialog open={dialog.open} onOpenChange={v => dialogState.open = v}>
