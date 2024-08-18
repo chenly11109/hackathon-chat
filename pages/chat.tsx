@@ -162,7 +162,7 @@ export default function Home() {
 
   return (
     <TooltipProvider>
-      <Chat messages={messages} sendMessage={() => { }} stopReceivingMessage={() => { }} />
+      <Chat messages={messages} stopReceivingMessage={() => { }} />
       <Toaster />
     </TooltipProvider>
   );
