@@ -26,7 +26,7 @@ export function BriefParser({
                     width={160}
                     height={160}
                     src="/tezign.png" alt="tezign" className="w-40 translate-y-10" />
-                <h2 className="font-semibold text-5xl z-10">Where Creative Begins</h2>
+                <h2 className="font-semibold text-5xl z-10">Where AIGC Begins</h2>
                 <p className="mb-10 mt-6 text-sm text-gray-500">你的智能售前小助手上线啦 ～</p>
 
 

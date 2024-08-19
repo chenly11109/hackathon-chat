@@ -39,6 +39,19 @@ import { ChatInput } from "./chat/chat-input"
 
 
 
+const renderHTML = (content: string) => {
+    return content.replace(/<h1>/g, '')
+        .replace(/<\/h1>/g, ',')
+        .replace(/<h2>/g, '')
+        .replace(/<\/h2>/g, ',')
+        .replace(/<h3>/g, '')
+        .replace(/<\/h3>/g, ',')
+        .replace(/<h4>/g, '')
+        .replace(/<\/h4>/g, ',')
+        .replace(/<p>/g, '')
+        .replace(/<\/p>/g, ',').substring(0, 100) + '...'
+}
+
 export interface IFileMeta {
     file_name: string
     file_size: number
@@ -53,7 +66,7 @@ export interface ISession {
 }
 
 const AuthHeader = {
-    'Authorization': `Bearer app-oR7OgFhq6emJ4P4zWpudlLoR`,
+    'Authorization': `Bearer app-hpXGbAYglckOAmTYroPKCbcc`,
 }
 
 const defaultSession = {
@@ -288,15 +301,16 @@ export function Dashboard({
         const messageIndex = messagesState[sessionId].length
 
         signalRef.current = new AbortController()
-        fetchEventSource(`https://dify.tezign.com/v1/chat-messages`, {
+        fetchEventSource(`https://dify.tezign.com/v1/workflows/run`, {
             method: 'POST',
             headers: {
                 ...AuthHeader,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                inputs: {},
-                query: message,
+                inputs: {
+                    "user_query": message
+                },
                 response_mode: "streaming",
                 conversation_id: state.sessions[sessionId].difyConversationId || '',
                 user: userId,
@@ -327,15 +341,32 @@ export function Dashboard({
                     taskIdRef.current = data.task_id
                     state.sessions[sessionId] = { ...state.sessions[sessionId], difyConversationId: data.conversation_id }
                 }
-                if ("message" === data.event) {
-                    messagesState[sessionId][messageIndex].content += data.answer
+                if ("text_chunk" === data.event) {
+                    messagesState[sessionId][messageIndex].content += data.data.text
                     if (messagesState[sessionId][messageIndex].status !== 'receiving') {
                         messagesState[sessionId][messageIndex].status = 'receiving'
                     }
                     scrollToBottom()
                 }
-                if ("message_end" === data.event) {
+                if ("workflow_finished" === data.event) {
+
+
+
                     messagesState[sessionId][messageIndex].status = 'finished'
+
+                    if (data.data?.outputs.retrieval_results) {
+                        messagesState[sessionId][messageIndex].content += '\n---\n'
+
+                        // messagesState[sessionId][messageIndex].content += '\n资料来源：'
+
+                        data.data?.outputs.retrieval_results?.forEach((item: any) => {
+                            messagesState[sessionId][messageIndex].content += `\n${item?.title}\n${item?.content ? renderHTML(item?.content) : ''}`
+                        })
+
+
+                    }
+
+
                 }
                 if ("error" === data.event) {
                     messagesState[sessionId][messageIndex].status = 'error'
@@ -363,7 +394,7 @@ export function Dashboard({
         }
         messagesState[state.currentSessionId][messagesState[state.currentSessionId].length - 1].status = 'normal'
         if (taskIdRef.current) {
-            await axios.post(`https://dify.tezign.com/v1/chat-messages/${taskIdRef.current}/stop`, { user: userId }, { headers: AuthHeader })
+            await axios.post(`https://dify.tezign.com/v1/workflows/run/${taskIdRef.current}/stop`, { user: userId }, { headers: AuthHeader })
         }
     }
 
