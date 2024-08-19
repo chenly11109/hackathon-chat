@@ -158,7 +158,7 @@ export function ChatInput({
                         </Tooltip>
                     </div>
                 </div>
-                <div className={twMerge('h-8 flex justify-center text-center w-full text-xs text-gray-500 hidden', 'md:block')}>内容由 AI 大模型生成，请仔细甄别</div>
+                <div className={twMerge('h-8 flex justify-center text-center w-full text-xs text-gray-500 hidden', 'md:block')}>内容由Tezign内部AI大模型生成，最终解释权归Tezign所有</div>
             </form>
         </div>
     )

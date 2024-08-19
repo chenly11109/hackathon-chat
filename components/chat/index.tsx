@@ -28,6 +28,7 @@ export interface IMessage {
     content: string
     meta?: any
     status?: string
+    loadingText?: string[]
 }
 
 
@@ -132,6 +133,18 @@ export function ChatMessage({
                         height={60}
                         alt="bars.svg"
                         src="/bars.svg" className="h-8 ml-1" />
+                }
+
+                {
+                    message.status === 'pending' &&
+                    message.loadingText?.length &&
+                    <div className="mx-5 my-2">{
+                        message.loadingText.map((item, index) => <div
+                            className="text-sm text-neutral-500 w-[200px]"
+                            key={index}>
+                            {item + '...'}
+                        </div>)}
+                    </div>
                 }
                 <MemoizedReactMarkdown
                     className="prose prose-sm max-w-screen-md break-words prose-p:leading-relaxed prose-pre:p-0 prose-a:text-blue-500 prose-h1:mb-2 prose-h2:mt-0 prose-h2:mb-2 text-gray-900 "

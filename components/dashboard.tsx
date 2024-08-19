@@ -40,7 +40,10 @@ import { ChatInput } from "./chat/chat-input"
 
 
 const renderHTML = (content: string) => {
-    return content.replace(/<h1>/g, '')
+    return '*' + content
+        .replace(/\(https?:\/\/[^\)]+\)/, "以下内容来源于：").replace(/[()]/g, "")
+        .replace(/https?:\/\/[^\s]+/g, "")
+        .replace(/<h1>/g, '')
         .replace(/<\/h1>/g, ',')
         .replace(/<h2>/g, '')
         .replace(/<\/h2>/g, ',')
@@ -49,7 +52,7 @@ const renderHTML = (content: string) => {
         .replace(/<h4>/g, '')
         .replace(/<\/h4>/g, ',')
         .replace(/<p>/g, '')
-        .replace(/<\/p>/g, ',').substring(0, 100) + '...'
+        .replace(/<\/p>/g, ',').substring(0, 100) + '...*\n'
 }
 
 export interface IFileMeta {
@@ -269,6 +272,10 @@ export function Dashboard({
     const sendMessageWithFile = async ({ content, file }: {
         content: string, file: IFile
     }) => {
+        if (!messagesState[state.currentSessionId]) {
+            messagesState[state.currentSessionId] = []
+        }
+
         messagesState[state.currentSessionId].push({
             role: 'user',
             type: 'file',
@@ -287,6 +294,10 @@ export function Dashboard({
     }
 
     const sendMessage = async (content: string) => {
+
+        if (!messagesState[state.currentSessionId]) {
+            messagesState[state.currentSessionId] = []
+        }
         messagesState[state.currentSessionId].push({
             role: 'user',
             type: 'text',
@@ -341,6 +352,13 @@ export function Dashboard({
                     taskIdRef.current = data.task_id
                     state.sessions[sessionId] = { ...state.sessions[sessionId], difyConversationId: data.conversation_id }
                 }
+
+                if ("node_started" === data.event) {
+                    if (!messagesState[sessionId][messageIndex].loadingText) {
+                        messagesState[sessionId][messageIndex].loadingText = []
+                    }
+                    messagesState[sessionId][messageIndex].loadingText.push(data.data.title)
+                }
                 if ("text_chunk" === data.event) {
                     messagesState[sessionId][messageIndex].content += data.data.text
                     if (messagesState[sessionId][messageIndex].status !== 'receiving') {
@@ -352,10 +370,10 @@ export function Dashboard({
                     if (data.data?.outputs.retrieval_results) {
                         messagesState[sessionId][messageIndex].content += '\n\n---\n'
 
-                        messagesState[sessionId][messageIndex].content += '资料来源：\n'
+                        messagesState[sessionId][messageIndex].content += '### 资料来源：\n'
 
-                        data.data?.outputs.retrieval_results?.forEach((item: any) => {
-                            messagesState[sessionId][messageIndex].content += `\n${item?.title}\n${item?.content ? renderHTML(item?.content) : ''}`
+                        data.data?.outputs.retrieval_results?.forEach((item: any, index: number) => {
+                            messagesState[sessionId][messageIndex].content += `\n ${index + 1}. ${item?.title}\n${item?.content ? renderHTML(item?.content) : ''}`
                         })
 
                     }
