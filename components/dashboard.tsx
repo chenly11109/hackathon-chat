@@ -68,8 +68,9 @@ export interface ISession {
     difyConversationId?: string
 }
 
+const apiKey = process.env.NEXT_PUBLIC_DIFY_API_KEY;
 const AuthHeader = {
-    'Authorization': `Bearer app-hpXGbAYglckOAmTYroPKCbcc`,
+    'Authorization': `Bearer ${apiKey}`,
 }
 
 const defaultSession = {
