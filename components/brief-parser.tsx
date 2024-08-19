@@ -3,7 +3,9 @@ import { ChatInput } from './chat/chat-input';
 
 function RecommendedQuestion({ question, askFirstQuestion }: { askFirstQuestion: (content: string) => Promise<void>, question: string }) {
     return <div
-        className='border border-1 rounded text-gray-600 px-2 py-1 cursor-pointer hover:text-black bg-white duration-300 transition-all'
+        className='border
+        mt-2 w-auto text-center
+        border-1 rounded text-gray-600 px-2 py-1 cursor-pointer hover:text-black bg-white duration-300 transition-all'
         onClick={() => {
             askFirstQuestion(question)
         }}
@@ -30,10 +32,10 @@ export function BriefParser({
                 <p className="mb-10 mt-6 text-sm text-gray-500">你的智能售前小助手上线啦 ～</p>
 
 
-                <div className='flex gap-2 w-full justify-center'>
-                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'商品合成图的应用场景是什么？'} />
-                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'怎么进行包装设计的模型训练？'} />
-                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'知识库解决了哪些用户痛点？'} />
+                <div className='gap-2 justify-center'>
+                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'Tezign商品合成图功能的壁垒是什么？'} />
+                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'请帮我介绍一下赫莲娜的商品图模型训练这个案例， 为什么要训练赫莲娜的模型？'} />
+                    <RecommendedQuestion askFirstQuestion={askFirstQuestion} question={'请帮我介绍一下玛氏的包装设计模型训练这个案例， 为什么要训练玛氏德芙巧克力的模型？'} />
                 </div>
 
             </div>

@@ -349,22 +349,18 @@ export function Dashboard({
                     scrollToBottom()
                 }
                 if ("workflow_finished" === data.event) {
-
-
-
-                    messagesState[sessionId][messageIndex].status = 'finished'
-
                     if (data.data?.outputs.retrieval_results) {
-                        messagesState[sessionId][messageIndex].content += '\n---\n'
+                        messagesState[sessionId][messageIndex].content += '\n\n---\n'
 
-                        // messagesState[sessionId][messageIndex].content += '\n资料来源：'
+                        messagesState[sessionId][messageIndex].content += '资料来源：\n'
 
                         data.data?.outputs.retrieval_results?.forEach((item: any) => {
                             messagesState[sessionId][messageIndex].content += `\n${item?.title}\n${item?.content ? renderHTML(item?.content) : ''}`
                         })
 
-
                     }
+                    messagesState[sessionId][messageIndex].status = 'finished'
+
 
 
                 }
